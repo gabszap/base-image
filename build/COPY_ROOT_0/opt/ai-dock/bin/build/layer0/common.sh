@@ -1,5 +1,11 @@
 #!/bin/false
 
+# Ubuntu 24.04 ships a default 'ubuntu' user/group at UID/GID 1000, which
+# collides with the ai-dock runtime user (also UID/GID 1000) and makes its
+# useradd fail. Remove it so UID/GID 1000 is free. (No-op on 22.04.)
+userdel -r ubuntu 2>/dev/null || true
+groupdel ubuntu 2>/dev/null || true
+
 groupadd -g 1111 ai-dock
 chown root.ai-dock /opt
 chmod g+w /opt
