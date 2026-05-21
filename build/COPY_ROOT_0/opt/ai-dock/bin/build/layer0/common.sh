@@ -50,7 +50,7 @@ $APT_INSTALL \
     lsb-release \
     lsof \
     man \
-    mlocate \
+    plocate \
     net-tools \
     nano \
     openssh-server \
