@@ -73,7 +73,9 @@ ARG ROCM_STRING
 
 # Use build scripts to ensure we can build all targets from one Dockerfile in a single layer.
 # Don't put anything heavy in here - We can use multi-stage building above if necessary.
-RUN yes | unminimize && \
+# Ubuntu 24.04 moved `unminimize` out of the base image into its own package.
+RUN apt-get update && apt-get install -y unminimize && \
+    yes | unminimize && \
     set -eo pipefail && /opt/ai-dock/bin/build/layer0/init.sh | tee /var/log/build.log
 
 # Keep init.sh as-is and place additional logic in /opt/ai-dock/bin/preflight.d
