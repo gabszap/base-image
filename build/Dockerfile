@@ -1,17 +1,17 @@
-ARG IMAGE_BASE="nvidia/cuda:11.8.0-base-ubuntu22.04"
+ARG IMAGE_BASE="nvidia/cuda:12.6.3-cudnn-runtime-ubuntu24.04"
 
 # Caddy build
-FROM ubuntu:22.04 as caddybuilder
+FROM ubuntu:24.04 as caddybuilder
 
 ENV PATH=/opt/go/bin:$PATH
 ENV GOROOT=/opt/go
 RUN apt-get update && \
     apt-get install -y wget && \
-    wget https://dl.google.com/go/go1.22.4.linux-amd64.tar.gz && \
-    tar -xf go1.22.4.linux-amd64.tar.gz && \
-    mv ./go /opt && \ 
-    wget https://github.com/caddyserver/xcaddy/releases/download/v0.4.2/xcaddy_0.4.2_linux_amd64.deb && \
-    apt-get install ./xcaddy_0.4.2_linux_amd64.deb && \
+    wget https://dl.google.com/go/go1.26.3.linux-amd64.tar.gz && \
+    tar -xf go1.26.3.linux-amd64.tar.gz && \
+    mv ./go /opt && \
+    wget https://github.com/caddyserver/xcaddy/releases/download/v0.4.5/xcaddy_0.4.5_linux_amd64.deb && \
+    apt-get install ./xcaddy_0.4.5_linux_amd64.deb && \
     xcaddy build \
         --with github.com/caddyserver/caddy/v2=github.com/ai-dock/caddy/v2@httpredirect \
         --with github.com/caddyserver/replace-response && \
@@ -34,14 +34,14 @@ COPY --from=caddybuilder /opt/caddy/ /opt/caddy/
 ARG XPU_TARGET="GPU_NVIDIA" # GPU_AMD, CPU
 ENV XPU_TARGET=${XPU_TARGET}
 
-ARG NODE_VERSION=v22.2.0
+ARG NODE_VERSION=v22.22.3
 ENV NODE_VERSION=${NODE_VERSION}
 
-LABEL org.opencontainers.image.source https://github.com/ai-dock/base-image
+LABEL org.opencontainers.image.source https://github.com/lucidboxai/base-image
 
-LABEL org.opencontainers.image.description "Base image for ai-dock."
+LABEL org.opencontainers.image.description "Base image for ai-dock (lucidboxai fork)."
 
-LABEL maintainer="Rob Ballantyne <rob@dynamedia.uk>"
+LABEL maintainer="lucidboxai"
 
 SHELL ["/bin/bash", "-c"]
 # Set ENV variables
