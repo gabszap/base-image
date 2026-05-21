@@ -59,7 +59,6 @@ $APT_INSTALL \
     python3-full \
     python3-pip \
     python3-venv \
-    rar \
     rclone \
     rsync \
     screen \
