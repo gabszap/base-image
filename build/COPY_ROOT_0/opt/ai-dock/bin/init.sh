@@ -12,6 +12,13 @@ function init_cleanup() {
 }
 
 function init_main() {
+    # Ensure supervisor config is valid - workaround for COPY naming collision
+    if [[ ! -s /etc/supervisor/supervisord.conf ]] || ! head -1 /etc/supervisor/supervisord.conf | grep -q "^\["; then
+        if [[ -f /etc/supervisor/supervisord/supervisord.conf ]]; then
+            cp /etc/supervisor/supervisord/supervisord.conf /etc/supervisor/supervisord.conf
+            printf "Restored supervisor config from subdirectory\n"
+        fi
+    fi
     init_set_envs "$@"
     init_create_directories
     init_create_logfiles
