@@ -6,9 +6,9 @@
     <body>
         <div class="one-col">
             <div id="page">
-                {{ render_partial('partials/login/page.html', context=context) }}
+                {{ render_partial('partials/login/page.html', title=context.title, service=context.service, urlslug=context.urlslug, cloud=context.cloud) }}
             </div>
     </div>
-    {{ render_partial('partials/template/scripts.html', context=context) }}
+    {{ render_partial('partials/template/scripts.html', title=context.title, service=context.service, urlslug=context.urlslug, cloud=context.cloud) }}
   </body>
 </html>

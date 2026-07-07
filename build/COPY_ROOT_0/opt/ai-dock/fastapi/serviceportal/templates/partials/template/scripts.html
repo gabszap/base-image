@@ -3,8 +3,50 @@
         const navs = document.querySelectorAll('.Navbar__Items')
         
         navs.forEach(nav => nav.classList.toggle('Navbar__ToggleShow'));
-        }
+    }
 
-        document.querySelector('.Navbar__Link-toggle')
-        .addEventListener('click', classToggle);
+    document.querySelector('.Navbar__Link-toggle')
+    .addEventListener('click', classToggle);
+
+    // ===== THEME TOGGLE =====
+    function toggleTheme() {
+        const html = document.documentElement;
+        const current = html.getAttribute('data-theme');
+        const next = current === 'dark' ? null : 'dark';
+        if (next) {
+            html.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            html.removeAttribute('data-theme');
+            localStorage.setItem('theme', 'light');
+        }
+        updateThemeIcon(next === 'dark');
+    }
+
+    function updateThemeIcon(isDark) {
+        const icon = document.getElementById('theme-icon');
+        if (icon) {
+            icon.className = isDark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+        }
+    }
+
+    function loadTheme() {
+        const saved = localStorage.getItem('theme');
+        const theme = saved || 'dark';
+        
+        if (theme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            updateThemeIcon(true);
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+            updateThemeIcon(false);
+        }
+    }
+
+    // Wait for DOM to be ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadTheme);
+    } else {
+        loadTheme();
+    }
 </script>

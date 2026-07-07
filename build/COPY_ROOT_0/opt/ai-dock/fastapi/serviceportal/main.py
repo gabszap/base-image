@@ -32,13 +32,19 @@ app.mount("/static", StaticFiles(directory=str(Path(base_dir, "static"))), name=
 async def get(request: Request):
     return load_index(request)
 
-
-
 @app.get("/login")
 async def get(request: Request):
-    return templates.TemplateResponse("login.html", {
-        "request": request, 
-        "context": {}
+    return templates.TemplateResponse(
+        request=request,
+        name="login.html",
+        context={
+            "request": request,
+            "context": {
+                "title": "Login",
+                "service": "serviceportal",
+                "urlslug": os.environ.get('IMAGE_SLUG'),
+                "cloud": os.environ.get('CLOUD_PROVIDER')
+            }
         }
     )
 
@@ -60,19 +66,19 @@ async def post(request: Request):
         
 @app.post("/ajax/index")
 async def post(request: Request):
-    return templates.TemplateResponse("partials/index/ajax.html", {
-        "request": request,
-        "context": get_index_context(request)
-        }
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/index/ajax.html",
+        context=get_index_context(request)
     )
 
 def load_index(request: Request, message: str = "", status_code: int = 200):
     context = get_index_context(request, message)
-    return templates.TemplateResponse("index.html", {
-        "request": request, 
-        "context": context,
-        "status": status_code
-        }
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context=context,
+        status_code=status_code
     )
 
 def get_index_context(request, message=None):
@@ -81,6 +87,17 @@ def get_index_context(request, message=None):
         "message": message,
         "request": request,
         "page": "index",
+        "context": {
+            "page": "index",
+            "urlslug": os.environ.get('IMAGE_SLUG'),
+            "cloud": os.environ.get('CLOUD_PROVIDER'),
+            "auth_token": request.cookies.get(os.environ.get('CADDY_AUTH_COOKIE_NAME')),
+            "services": services,
+            "direct_address": False if os.environ.get('DIRECT_ADDRESS', 'true').lower() == "false" else True,
+            'quicktunnels': False if os.environ.get('CF_QUICK_TUNNELS', 'true').lower() == "false" else True,
+            'namedtunnels': False if not os.environ.get('CF_TUNNEL_TOKEN') else True,
+            "message": message,
+        },
         "auth_token": request.cookies.get(os.environ.get('CADDY_AUTH_COOKIE_NAME')),
         "services": services,
         "urlslug": os.environ.get('IMAGE_SLUG'),
@@ -108,12 +125,17 @@ async def post(request: Request):
     port = urllib.parse.unquote(form['port'])
     path = urllib.parse.unquote(form['path'])
     url = helpers.get_cfnt_url(port, path)
-    return templates.TemplateResponse("partials/index/cfnt_link.html", {
-        "request": request, 
-        "context": {"url":url, "port":port}
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/index/cfnt_link.html",
+        context={
+            "context": {
+                "url": url,
+                "port": port,
+                "auth_token": request.cookies.get(os.environ.get('CADDY_AUTH_COOKIE_NAME'))
+            }
         }
     )
-
 
 @app.get("/quicktunnel/{port}")
 async def get(request: Request, port: str):
@@ -134,12 +156,17 @@ async def post(request: Request):
     port = urllib.parse.unquote(form['port'])
     path = urllib.parse.unquote(form['path'])
     url = helpers.get_cfqt_url(port, path)
-    return templates.TemplateResponse("partials/index/cfqt_link.html", {
-        "request": request, 
-        "context": {"url":url, "port":port}
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/index/cfqt_link.html",
+        context={
+            "context": {
+                "url": url,
+                "port": port,
+                "auth_token": request.cookies.get(os.environ.get('CADDY_AUTH_COOKIE_NAME'))
+            }
         }
     )
-
     
 @app.get("/direct/{port}")
 async def get(request: Request, port: str):
@@ -160,32 +187,46 @@ async def post(request: Request):
     port = urllib.parse.unquote(form['port'])
     path = urllib.parse.unquote(form['path'])
     url = helpers.get_direct_url(port, path)
-    return templates.TemplateResponse("partials/index/direct_link.html", {
-        "request": request, 
-        "context": {"url":url, "port":port}
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/index/direct_link.html",
+        context={
+            "context": {
+                "url": url,
+                "port": port,
+                "auth_token": request.cookies.get(os.environ.get('CADDY_AUTH_COOKIE_NAME'))
+            }
         }
     )
 
 @app.get("/logs")
 async def get(request: Request):
-    return templates.TemplateResponse("logs.html", {
-        "request": request, 
-        "context": get_logs_context()
-        }
+    return templates.TemplateResponse(
+        request=request,
+        name="logs.html",
+        context=get_logs_context()
     )
     
 @app.post("/ajax/logs")
 async def post(request: Request):
-    return templates.TemplateResponse("partials/logs/ajax.html", {
-        "request": request, 
-        "context": get_logs_context()
-        }
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/logs/ajax.html",
+        context=get_logs_context()
     )
 
 def get_logs_context():
     return {
         "title": "Container Logs",
         "page": "logs",
+        "context": {
+            "title": "Container Logs",
+            "page": "logs",
+            "urlslug": os.environ.get('IMAGE_SLUG'),
+            "log_file": "/var/log/logtail.log",
+            "refresh": 5,
+            "cloud": os.environ.get('CLOUD_PROVIDER')
+        },
         "urlslug": os.environ.get('IMAGE_SLUG'),
         "log_file": "/var/log/logtail.log",
         "refresh": 5,
@@ -212,18 +253,18 @@ async def websocket_endpoint_log(websocket: WebSocket) -> None:
         
 @app.get("/processes")
 async def get(request: Request):
-    return templates.TemplateResponse("processes.html", {
-        "request": request, 
-        "context": get_processes_context()
-        }
+    return templates.TemplateResponse(
+        request=request,
+        name="processes.html",
+        context=get_processes_context()
     )
 
 @app.post("/ajax/processes")
 async def post(request: Request):
-    return templates.TemplateResponse("partials/processes/ajax.html", {
-        "request": request, 
-        "context": get_processes_context()
-        }
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/processes/ajax.html",
+        context=get_processes_context()
     )
 
 @app.post("/ajax/processes/stop")
@@ -231,10 +272,10 @@ async def post(request: Request):
     form = await request.form()
     name = urllib.parse.unquote(form['process'])
     helpers.stop_process(name)
-    return templates.TemplateResponse("partials/processes/row.html", {
-        "request": request, 
-        "context": get_process_context(name)
-        }
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/processes/row.html",
+        context=get_process_context(name)
     )
 
 @app.post("/ajax/processes/start")
@@ -242,10 +283,10 @@ async def post(request: Request):
     form = await request.form()
     name = urllib.parse.unquote(form['process'])
     helpers.start_process(name)
-    return templates.TemplateResponse("partials/processes/row.html", {
-        "request": request, 
-        "context": get_process_context(name)
-        }
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/processes/row.html",
+        context=get_process_context(name)
     )
 
 @app.post("/ajax/processes/restart")
@@ -253,10 +294,10 @@ async def post(request: Request):
     form = await request.form()
     name = urllib.parse.unquote(form['process'])
     helpers.restart_process(name)
-    return templates.TemplateResponse("partials/processes/row.html", {
-        "request": request, 
-        "context": get_process_context(name)
-        }
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/processes/row.html",
+        context=get_process_context(name)
     )
 
 def get_processes_context():
@@ -264,11 +305,19 @@ def get_processes_context():
         "page": "processes",
         "processes": helpers.get_all_processes(),
         "urlslug": os.environ.get('IMAGE_SLUG'),
+        "context": {
+            "page": "processes",
+            "processes": helpers.get_all_processes(),
+            "urlslug": os.environ.get('IMAGE_SLUG'),
+        }
     }
 
 def get_process_context(name):
     return {
-        "process": helpers.get_single_process(name)
+        "process": helpers.get_single_process(name),
+        "context": {
+            "process": helpers.get_single_process(name)
+        }
     }
    
 @app.get("/{catch_all:path}")

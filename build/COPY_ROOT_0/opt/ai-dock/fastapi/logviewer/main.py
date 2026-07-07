@@ -79,12 +79,13 @@ async def get(request: Request):
         "service": args.service,
         "refresh": args.refresh,
         "log_file": args.file,
-        "cloud": os.environ.get('CLOUD_PROVIDER')
+        "cloud": os.environ.get('CLOUD_PROVIDER'),
+        "request": request
     }
-    return templates.TemplateResponse("index.html", {
-        "request": request, 
-        "context": context
-        }
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context=context
     )
 
 # set parameters to run uvicorn
