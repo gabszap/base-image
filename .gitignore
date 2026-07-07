@@ -3,3 +3,5 @@ config/authorized_keys
 config/rclone
 config/tls/*
 .env
+venv/
+__pycache__

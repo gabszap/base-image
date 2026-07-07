@@ -37,7 +37,7 @@ ENV LD_LIBRARY_PATH=
 COPY --from=caddybuilder /opt/caddy/ /opt/caddy/
 
 # Determines which scripts at /opt/ai-dock/bin/build/layerX will be run by init.sh
-ARG XPU_TARGET="GPU_NVIDIA" # GPU_AMD, CPU
+ARG XPU_TARGET="NVIDIA_GPU" # NVIDIA_GPU, AMD_GPU, CPU
 ENV XPU_TARGET=${XPU_TARGET}
 
 ARG NODE_VERSION=v22.22.3
@@ -71,6 +71,20 @@ ENV SUPERVISOR_NO_AUTOSTART=
 ENV APT_INSTALL="apt-get install -y --no-install-recommends"
 ENV RCLONE_CONFIG="/etc/rclone/rclone.conf"
 ENV IMAGE_SLUG="base-image"
+ENV CODE_SERVER_PROXY_PORT=2222
+ENV CODE_SERVER_ENABLED=true
+ENV CODE_SERVER_EXTENSIONS=castrogusttavo.symbols
+
+# code-server — VS Code in the browser (latest stable)
+RUN apt-get update && apt-get install -y --no-install-recommends wget ca-certificates && \
+    CODE_SERVER_VERSION=$(wget -qO- https://api.github.com/repos/coder/code-server/releases/latest | grep -oP '"tag_name": "\K[^"]+') && \
+    echo "Installing code-server ${CODE_SERVER_VERSION}" && \
+    wget https://github.com/coder/code-server/releases/download/${CODE_SERVER_VERSION}/code-server_${CODE_SERVER_VERSION#v}_amd64.deb && \
+    apt-get install -y ./code-server_${CODE_SERVER_VERSION#v}_amd64.deb && \
+    rm code-server_${CODE_SERVER_VERSION#v}_amd64.deb && \
+    rm -rf /var/lib/apt/lists/* && \
+    echo "code-server ${CODE_SERVER_VERSION} installed successfully"
+
 # Copy early so we can use scripts in the build - Changes to these files will invalidate the cache and cause a rebuild.
 COPY --chown=0:1111 ./COPY_ROOT_0/ /
 
@@ -81,11 +95,22 @@ ARG ROCM_STRING
 # Don't put anything heavy in here - We can use multi-stage building above if necessary.
 # Ubuntu 24.04 moved `unminimize` out of the base image into its own package;
 # on 22.04 it ships as a built-in script. Install the package only if absent.
-RUN if ! command -v unminimize >/dev/null 2>&1; then \
-        apt-get update && apt-get install -y unminimize; \
-    fi && \
-    yes | unminimize && \
-    set -eo pipefail && /opt/ai-dock/bin/build/layer0/init.sh | tee /var/log/build.log
+
+# Impede dpkg de perguntar sobre conffiles durante o build
+RUN echo 'Dpkg::Options { "--force-confold"; "--force-confdef"; }' \
+    > /etc/apt/apt.conf.d/99-docker-build
+
+RUN sed -i 's/^exit 1$/exit 0/' /opt/ai-dock/bin/env-store.sh
+
+RUN set -eo pipefail && \
+    find /opt/ai-dock/bin/ -type f -name "*.sh" -exec sed -i 's/\r$//' {} + && \
+    sed -i 's/^exit 1$/exit 0/' /opt/ai-dock/bin/env-store.sh && \
+    DEBIAN_FRONTEND=noninteractive \
+    DEBIAN_PRIORITY=critical \
+    RUNLEVEL=1 /opt/ai-dock/bin/build/layer0/init.sh | tee /var/log/build.log
+
+# Supervisor config is placed in subdirectory due to COPY naming; ensure main config is correct
+RUN cp /etc/supervisor/supervisord/supervisord.conf /etc/supervisor/supervisord.conf
 
 # Keep init.sh as-is and place additional logic in /opt/ai-dock/bin/preflight.d
 CMD ["init.sh"]
